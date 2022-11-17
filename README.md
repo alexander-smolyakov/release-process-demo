@@ -12,7 +12,7 @@ Briefly speaking repositories are communicating with each other via events. Thes
 
 The implementation can be found in `release_flow.yml`.
 
-## Implementiot deatails
+## Implementation details
 
 Under the hood, we are using GitHub API and the `github-script` action. This action allows us to execute various API queries to different GitHub endpoints. Another benefit of using this action is that we can use data from the request's response and use this data on the next steps of our workflow.
 
