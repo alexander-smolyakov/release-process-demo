@@ -7,7 +7,7 @@ This repo contains workflow that represents workflow with release tickets. The m
 
 The `release-process-demo-target-1` contains workflow that can be triggered from this repository. The related flow will send updates to the release ticket. 
 
-## How its work?
+## How does it work?
 Briefly speaking repositories are communicating with each other via events. These events are triggered workflows to send/receive data.
 
 The implementation can be found in `release_flow.yml`.
