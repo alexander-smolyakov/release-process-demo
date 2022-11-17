@@ -1,0 +1,105 @@
+name: Release flow
+
+on:
+  workflow_dispatch:
+    inputs:
+      targetRepo:
+        type: choice
+        required: true
+        description: Target repo to kick-off release
+        default: release-process-demo-target-1
+        options:
+          - release-process-demo-target-1
+          - release-process-demo-target-2
+
+      failJob:
+        description: Fail the job?
+        type: boolean
+        required: false
+        default: false
+
+jobs:
+  releaseJob:
+    runs-on: ubuntu-latest
+    steps:
+      # Step: Creates release ticket
+      # Description: Create ticket, post general info, assigne ticket to release driver
+      # GH API doc: https://docs.github.com/en/rest/issues/issues#create-an-issue
+      - name: Create release ticket
+        uses: actions/github-script@v6
+        id: release-ticket-number
+        with:
+          debug: true
+          result-encoding: string
+          script: |
+            try {
+              const response = await github.rest.issues.create({
+                owner: '${{ github.repository_owner }}',
+                repo: '${{ github.event.repository.name }}',
+                title: 'Release for ${{ github.event.inputs.targetRepo }}',
+                labels: ['release'],
+                assignee: 'alexander-smolyakov',
+                body: `## Release summary\n**Release driver**: @${{ github.actor }}\n**Target repo**: ${{ github.event.inputs.targetRepo }}\n**Related pipeline run**: [link](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})`
+              });
+              return response.data.number;
+            } catch (error) {
+              core.setFailed(error.message);
+            }
+
+      - name: Show release ticket number
+        run: echo "${{steps.release-ticket-number.outputs.result}}"
+
+      - name: Pass or fail job
+        run: exit 1
+        if: github.event.inputs.failJob == 'true'
+
+      # Step: Launch release pipeline for target repo
+      # Description: We emit an event to launch the release pipeline
+      # GH API doc: https://docs.github.com/en/rest/actions/workflows#create-a-workflow-dispatch-even
+      - name: Launch release pipeline for ${{ github.event.inputs.targetRepo }}
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GH_REPO_TOKEN }}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: '${{ github.repository_owner }}',
+              repo: '${{ github.event.inputs.targetRepo }}',
+              workflow_id: 'main.yml',
+              ref: 'main',
+              inputs: {
+                reportTo: 'release-process-demo',
+                releaseTicketNumber: '${{ steps.release-ticket-number.outputs.result }}',
+              }
+            });
+
+      # Step: Send link for GH release to release ticket
+      # Description: Post information that the event to start the release pipeline emitted successfully
+      # Link to related flow: https://github.com/alexander-smolyakov/release-process-demo/blob/main/.github/workflows/update_release_ticket.yml
+      # GH API doc: https://docs.github.com/en/rest/issues/comments#create-an-issue-comment
+      - name: Update release ticket - Event emitted
+        uses: actions/github-script@v6
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: '${{ github.repository_owner }}',
+              repo: '${{ github.event.repository.name }}',
+              issue_number: '${{ steps.release-ticket-number.outputs.result }}',
+              body: `✅ Event to launch release pipeline was emitted successfully 🚀`
+            });
+
+      
+      # Step: Send link for GH release to release ticket
+      # Description: Post information that pipeline failed
+      # Link to related flow: https://github.com/alexander-smolyakov/release-process-demo/blob/main/.github/workflows/update_release_ticket.yml
+      # GH API doc: https://docs.github.com/en/rest/issues/comments#create-an-issue-comment
+      - name: Update release ticket - Notification on failer
+        if: failure()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: '${{ github.repository_owner }}',
+              repo: '${{ github.event.repository.name }}',
+              issue_number: '${{ steps.release-ticket-number.outputs.result }}',
+              body: `❌ Pipeline failed please investigate.\n**Link to pipeline**: [link](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).\n**Job status**: ${{ job.status }}`
+            });

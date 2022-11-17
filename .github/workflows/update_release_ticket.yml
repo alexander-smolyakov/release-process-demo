@@ -1,0 +1,33 @@
+name: Update release ticket
+
+on:
+  workflow_dispatch:
+    inputs:
+      ticketNumber:
+        description: Release ticket number
+        type: string
+        required: true
+        default: "-1"
+      message:
+        description: Message to post
+        type: string
+        required: true
+        default: ""
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      # Step: Updated release ticket
+      # Description: Add new info about release ticket via adding new comment
+      # GH API doc: https://docs.github.com/en/rest/issues/comments#create-an-issue-comment
+      - name: Report status to release ticket
+        uses: actions/github-script@v6
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: 'alexander-smolyakov',
+              repo: 'release-process-demo',
+              issue_number: '${{ github.event.inputs.ticketNumber }}',
+              body: '${{ github.event.inputs.message }}'
+            });
