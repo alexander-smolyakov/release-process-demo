@@ -11,12 +11,16 @@ on:
         options:
           - release-process-demo-target-1
           - release-process-demo-target-2
-
       failJob:
         description: Fail the job?
         type: boolean
         required: false
         default: false
+      draftRelease:
+        description: Create draft release
+        type: boolean
+        required: false
+        default: true
 
 jobs:
   releaseJob:
@@ -68,6 +72,7 @@ jobs:
               ref: 'main',
               inputs: {
                 reportTo: 'release-process-demo',
+                draftRelease: '${{ github.event.inputs.draftRelease }}',
                 releaseTicketNumber: '${{ steps.release-ticket-number.outputs.result }}',
               }
             });
@@ -87,7 +92,6 @@ jobs:
               body: `✅ Event to launch release pipeline was emitted successfully 🚀`
             });
 
-      
       # Step: Send link for GH release to release ticket
       # Description: Post information that pipeline failed
       # Link to related flow: https://github.com/alexander-smolyakov/release-process-demo/blob/main/.github/workflows/update_release_ticket.yml
