@@ -5,16 +5,20 @@ This repo contains workflow that represents workflow with release tickets. The m
 
 ### Related resources
 
-The `release-process-demo-target-1` contains workflow that can be triggered from this repository. The related flow will send updates to the release ticket. 
+The [release-process-demo-target-1](https://github.com/alexander-smolyakov/release-process-demo-target-1) contains workflow that can be triggered from this repository. The related flow will send updates to the release ticket. 
 
 ## How does it work?
 Briefly speaking repositories are communicating with each other via events. These events are triggered workflows to send/receive data.
 
 The implementation can be found in `release_flow.yml`.
 
-## Implementiot deatails
+## Implementation details
 
 Under the hood, we are using GitHub API and the `github-script` action. This action allows us to execute various API queries to different GitHub endpoints. Another benefit of using this action is that we can use data from the request's response and use this data on the next steps of our workflow.
+
+### Example
+
+https://github.com/alexander-smolyakov/release-process-demo/blob/e2e0732414be8ec2fa4b3fd9e1b34e183b816066/.github/workflows/release_flow.yml#L56-L73
 
 ## Constraints and limitations
 
